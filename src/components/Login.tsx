@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { envAuthProvider } from '../lib/auth';
+import { authProvider } from '../lib/auth';
 
 export default function Login({ onLogin }: { onLogin: () => void }) {
   const [username, setUsername] = useState('');
@@ -8,7 +8,7 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await envAuthProvider.login(username, password);
+    const success = await authProvider.login(username, password);
     if (success) {
       onLogin();
     } else {

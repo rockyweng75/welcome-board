@@ -2,6 +2,9 @@ name: welcome-board
 
 services:
   app:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: welcome-board:latest
     container_name: welcome-board
     restart: unless-stopped
@@ -11,6 +14,29 @@ services:
       # Persist all data (slides, backgrounds, presets, JSON files) across restarts.
       # Place preset images in ./data/presets/ on the host before starting.
       - ./data:/app/data
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
       - PORT=8080
+    # Windows Docker Desktop 網絡配置
+    # 允許容器訪問外部網絡 (如 IBM i 系統 192.168.6.20)
+    networks:
+      - default
+    # 使用 Windows 主機的 DNS 和網絡配置
+    dns:
+      - 8.8.8.8           # Google DNS
+      - 1.1.1.1           # Cloudflare DNS
+    # 添加主機 IP 映射 (可選)
+    extra_hosts:
+      - "ibmi.local:192.168.6.20"
+    # 確保容器可以訪問 Windows 防火牆允許的端口
+    cap_add:
+      - NET_BIND_SERVICE
+
+networks:
+  default:
+    driver: bridge
+    driver_opts:
+      # Windows Docker 特定選項
+      com.docker.network.driver.mtu: 1500

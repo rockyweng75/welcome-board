@@ -1,10 +1,18 @@
+import dotenv from 'dotenv';
 import express from "express";
 import fs from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
+import { execSync } from "child_process";
 import AdmZip from "adm-zip";
+import odbc from 'odbc';
+
+// 只在開發環境加載 .env 檔案（Docker 會自動加載環境變數）
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config();
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -305,6 +313,99 @@ async function startServer() {
     }
   });
 
+  // ── Authentication ───────────────────────────────────────────────────────
+
+  // 構建 ODBC 連線字符串
+  const buildOdbcConnectionString = (hostname: string, port: string, database: string, username: string, password: string) => {
+    // IBM i (AS/400) ODBC 連線字串
+    return `DRIVER={IBM i Access ODBC Driver};SYSTEM=${hostname};UID=${username};PWD=${password};`;
+    //return `DRIVER={Client Access ODBC Driver (32-bit)};SYSTEM=${hostname};UID=${username};PWD=${password}`;
+  };
+
+  // DB2/ODBC 認證端點
+  app.post('/api/auth/db2', async (req, res) => {
+    let connection = null;
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ success: false, error: 'Missing username or password' });
+      }
+
+      const hostname = process.env.DB2_HOSTNAME || process.env.DB2_SYSTEM || process.env.DB2_HOST || 'localhost';
+      const port = process.env.DB2_PORT || '446';
+      const database = process.env.DB2_DATABASE || '*LOCAL';
+
+      console.log(`🔐 ODBC authentication attempt for user: ${username}`);
+
+
+      try {
+        // 構建連線字符串
+        const connectionString = buildOdbcConnectionString(hostname, port, database, username, password);
+        console.log(`   Connecting to: ${connectionString}`);
+        // 連接到資料庫
+        connection = await odbc.connect(connectionString);
+        
+        console.log(`✅ ODBC connection successful for user: ${username}`);
+        
+        // 認證成功，生成令牌
+        const token = Buffer.from(`${username}:${Date.now()}`).toString('base64');
+        
+        console.log(`✅ ODBC authentication successful for user: ${username}`);
+        
+        return res.json({ 
+          success: true, 
+          message: 'ODBC authentication successful',
+          token,
+          username
+        });
+        
+      } catch (dbError: any) {
+        const errorMessage = dbError.message || 'Unknown error';
+        console.error(`❌ ODBC authentication failed: ${errorMessage}`);
+        
+        // 檢查是否是連線或認證錯誤
+        if (errorMessage.includes('[08001]') || 
+            errorMessage.includes('[28000]') ||
+            errorMessage.includes('authentication failed') ||
+            errorMessage.includes('invalid user') ||
+            errorMessage.includes('permission denied')) {
+          return res.status(401).json({ 
+            success: false, 
+            error: 'Invalid username or password'
+          });
+        }
+        
+        return res.status(401).json({ 
+          success: false, 
+          error: 'ODBC authentication failed'
+        });
+      }
+    } catch (error) {
+      console.error('❌ 認證端點錯誤:', error);
+      res.status(500).json({ success: false, error: 'Internal server error' });
+    } finally {
+      // 關閉連接
+      if (connection) {
+        try {
+          await connection.close();
+          console.log('✅ ODBC connection closed');
+        } catch (closeError) {
+          console.warn('⚠️  Error closing connection:', (closeError as any).message);
+        }
+      }
+    }
+  });
+
+  // 簡單的認證狀態檢查
+  app.get('/api/auth/status', (req, res) => {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (token && token.length > 0) {
+      return res.json({ authenticated: true });
+    }
+    res.json({ authenticated: false });
+  });
+
   // ── Settings ──────────────────────────────────────────────────────────────
 
   app.get('/api/settings', async (req, res) => {
@@ -395,7 +496,7 @@ async function startServer() {
     });
   }
 
-  const PORT = parseInt(process.env.PORT || '3000', 10);
+  const PORT = parseInt(process.env.PORT || '5000', 10);
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
