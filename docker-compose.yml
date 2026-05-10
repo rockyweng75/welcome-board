@@ -1,0 +1,15 @@
+name: welcome-board
+
+services:
+  app:
+    image: welcome-board:latest
+    container_name: welcome-board
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      # Persist all data (slides, backgrounds, presets, JSON files) across restarts.
+      # Place preset images in ./data/presets/ on the host before starting.
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=production

@@ -1,0 +1,6 @@
+{
+  "name": "時光歡迎看板",
+  "description": "現代化的全螢幕歡迎看板系統，支援圖片上傳、動態輪播與檔案效期管理。",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

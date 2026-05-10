@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Segoe UI", "Microsoft JhengHei", "Noto Sans TC", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Georgia", "Noto Serif TC", ui-serif, serif;
+  --font-kaiti: "Kaiti TC", "BiauKai", "DFKai-SB", serif;
+}
+
+body {
+  @apply bg-[#F8F8F7];
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 10px;
+}
+
+/* 文字藝術師 (WordArt) 特效 */
+.wordart-gold {
+  background: linear-gradient(to bottom, #FFF1AB 0%, #D4AF37 40%, #AA7516 60%, #FFDF73 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.4));
+}
+.wordart-silver {
+  background: linear-gradient(to bottom, #ffffff 0%, #a9a9a9 40%, #707070 60%, #e0e0e0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.4));
+}
+.wordart-bronze {
+  background: linear-gradient(to bottom, #E8B382 0%, #B87333 40%, #804000 60%, #CD7F32 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.4));
+}
