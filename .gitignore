@@ -6,3 +6,13 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Docker images and builds
+*.tar
+*.tar.gz
+*.tar.bz2
+
+# Build artifacts
+Dockerfile
+docker-compose*.yml
+!
